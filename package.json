@@ -1,45 +1,48 @@
 {
-	"name": "your-module-name",
-	"version": "0.1.0",
-	"main": "dist/main.js",
-	"type": "module",
+	"name": "stagetec-emberplus-avatus",
+	"version": "1.0.0",
+	"main": "dist/index.js",
 	"scripts": {
-		"postinstall": "husky",
-		"format": "prettier -w .",
-		"package": "run build && companion-module-build",
-		"build": "rimraf dist && run build:main",
-		"build:main": "tsc -p tsconfig.build.json",
-		"dev": "tsc -p tsconfig.build.json --watch",
+		"prepare": "husky",
+		"dev": "yarn build:watch",
+		"build": "rimraf dist && yarn build:main",
+		"build:main": "tsc -p tsconfig.json",
+		"build:watch": "tsc -p tsconfig.json --watch",
 		"lint:raw": "eslint",
-		"lint": "run lint:raw ."
+		"lint": "yarn lint:raw .",
+		"dist": "yarn companion-module-build",
+		"package": "rimraf dist && yarn build:main && yarn dist"
 	},
 	"license": "MIT",
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/bitfocus/companion-module-your-module-name.git"
-	},
-	"dependencies": {
-		"@companion-module/base": "~1.11.2"
-	},
-	"devDependencies": {
-		"@companion-module/tools": "^2.1.1",
-		"@types/node": "^22.10.2",
-		"eslint": "^9.17.0",
-		"husky": "^9.1.7",
-		"lint-staged": "^15.2.11",
-		"prettier": "^3.4.2",
-		"rimraf": "^6.0.1",
-		"typescript": "~5.5.4",
-		"typescript-eslint": "^8.18.1"
-	},
-	"prettier": "@companion-module/tools/.prettierrc.json",
 	"lint-staged": {
-		"*.{css,json,md,scss}": [
+		"*.{js,json,md}": [
 			"prettier --write"
 		],
-		"*.{ts,tsx,js,jsx}": [
+		"*.{ts}": [
 			"yarn lint:raw --fix"
 		]
 	},
-	"packageManager": "yarn@4.5.3"
+	"engines": {
+		"node": ">=22.13"
+	},
+	"dependencies": {
+		"@companion-module/base": "~1.11.3",
+		"@types/node": "^22.13.0",
+		"emberplus-connection": "^0.2.1",
+		"jquery": "^3.7.1"
+	},
+	"devDependencies": {
+		"@companion-module/tools": "^2.2.2",
+		"@types/jquery": "^3.5.30",
+		"@types/node": "^22.13",
+		"eslint": "^9.23.0",
+		"husky": "^9.1.7",
+		"lint-staged": "^15.5.0",
+		"prettier": "^3.5.3",
+		"rimraf": "^6.0.1",
+		"typescript": "~5.8.2",
+		"typescript-eslint": "^8.28.0"
+	},
+	"prettier": "@companion-module/tools/.prettierrc.json",
+	"packageManager": "yarn@4.8.1"
 }

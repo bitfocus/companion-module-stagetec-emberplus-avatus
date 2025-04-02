@@ -1,26 +1,26 @@
 {
-	"id": "your-module-name",
-	"name": "your-module-name",
-	"shortname": "module-shortname",
-	"description": "A short one line description of your module",
-	"version": "0.0.0",
-	"license": "MIT",
-	"repository": "git+https://github.com/bitfocus/companion-module-your-module-name.git",
-	"bugs": "https://github.com/bitfocus/companion-module-your-module-name/issues",
-	"maintainers": [
-		{
-			"name": "Your name",
-			"email": "Your email"
-		}
-	],
-	"runtime": {
-		"type": "node22",
-		"api": "nodejs-ipc",
-		"apiVersion": "0.0.0",
-		"entrypoint": "../dist/main.js"
-	},
-	"legacyIds": [],
-	"manufacturer": "Your company",
-	"products": ["Your product"],
-	"keywords": []
+  "id": "stagetec-emberplus-avatus",
+  "name": "stagetec-emberplus-avatus",
+  "shortname": "Ember+ Avatus",
+  "description": "StageTec Official Ember+ module specific to Avatus for Companion",
+  "version": "1.0.0",
+  "license": "MIT",
+  "repository": "git+https://github.com/",
+  "bugs": "https://github.com/",
+  "maintainers": [
+    {
+      "name": "Christian Stachowitz",
+      "email": "companion@stagetec.com"
+    }
+  ],
+  "legacyIds": [],
+  "runtime": {
+    "type": "node18",
+    "api": "nodejs-ipc",
+    "apiVersion": "0.0.0",
+    "entrypoint": "../dist/index.js"
+  },
+  "manufacturer": "STAGETEC Official",
+  "products": ["Ember+ Avatus"],
+  "keywords": ["ember", "emberplus", "avatus"]
 }

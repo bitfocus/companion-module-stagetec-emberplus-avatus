@@ -1,9 +1,11 @@
-import type { ModuleInstance } from './main.js'
+import { CompanionVariableDefinition } from '@companion-module/base'
+import { EmberPlusConfig } from './config'
 
-export function UpdateVariableDefinitions(self: ModuleInstance): void {
-	self.setVariableDefinitions([
-		{ variableId: 'variable1', name: 'My first variable' },
-		{ variableId: 'variable2', name: 'My second variable' },
-		{ variableId: 'variable3', name: 'Another variable' },
-	])
+export function GetVariablesList(config: EmberPlusConfig): CompanionVariableDefinition[] {
+	return (
+		config.monitoredParameters?.map(({ id, label }) => ({
+			name: id,
+			variableId: label,
+		})) ?? []
+	)
 }

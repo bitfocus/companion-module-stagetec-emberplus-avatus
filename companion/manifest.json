@@ -3,10 +3,10 @@
   "name": "stagetec-emberplus-avatus",
   "shortname": "Ember+ Avatus",
   "description": "StageTec Official Ember+ module specific to Avatus for Companion",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "license": "MIT",
-  "repository": "git+https://github.com/",
-  "bugs": "https://github.com/",
+  "repository": "git+https://github.com/bitfocus/companion-module-stagetec-emberplus-avatus",
+  "bugs": "https://github.com/bitfocus/companion-module-stagetec-emberplus-avatus/issues",
   "maintainers": [
     {
       "name": "Christian Stachowitz",

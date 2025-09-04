@@ -1,6 +1,6 @@
 {
 	"name": "stagetec-emberplus-avatus",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"main": "dist/index.js",
 	"scripts": {
 		"prepare": "husky",
@@ -28,12 +28,10 @@
 	"dependencies": {
 		"@companion-module/base": "~1.11.3",
 		"@types/node": "^22.13.0",
-		"emberplus-connection": "^0.2.1",
-		"jquery": "^3.7.1"
+		"emberplus-connection": "^0.2.1"
 	},
 	"devDependencies": {
 		"@companion-module/tools": "^2.2.2",
-		"@types/jquery": "^3.5.30",
 		"@types/node": "^22.13",
 		"eslint": "^9.23.0",
 		"husky": "^9.1.7",

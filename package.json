@@ -23,11 +23,11 @@
 		]
 	},
 	"engines": {
-		"node": ">=22.13"
+		"node": "^22.14",
+		"yarn": "^4"
 	},
 	"dependencies": {
 		"@companion-module/base": "~1.11.3",
-		"@types/node": "^22.13.0",
 		"emberplus-connection": "^0.2.1"
 	},
 	"devDependencies": {

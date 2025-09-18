@@ -29,3 +29,6 @@ Credits to the developers of the generic Ember+ module for the basis (https://gi
 ### 1.0.1
  * proper links to GitHub Repo added to manifest.json
  * dependency cleanup
+
+### 1.0.2
+ * dependency cleanup

@@ -1,6 +1,6 @@
 {
 	"name": "stagetec-emberplus-avatus",
-	"version": "1.0.2",
+	"version": "1.0.3",
 	"main": "dist/index.js",
 	"scripts": {
 		"prepare": "husky",

@@ -28,186 +28,224 @@ const pathInput: CompanionInputFieldTextInput = {
 }
 
 const setValue =
-	(self: InstanceBase<EmberPlusConfig>, emberClient: EmberClient, type: EmberModel.ParameterType) =>
+	(self: InstanceBase<EmberPlusConfig>, emberClient: EmberClient, config?: EmberPlusConfig) =>
 	async (action: CompanionActionEvent): Promise<void> => {
 		let selected_path = ''
-		if (action.options['use_select']) selected_path = action.options['varPath'] as string
-		else selected_path = action.options['path'] as string
 
-		const param_node = await emberClient.getElementByPath(selected_path)
+    if (action.options['varPath'] && action.options['varPath'] as number != -1)
+		  selected_path = action.options['varPath'] as string
+    else if (action.options['path'])
+		  selected_path = action.options['path'] as string
 
-		let value = action.options['value']
+    if (selected_path == '')
+      self.log('error', 'Selected path is undefined!')
+    else
+    {
+      const param_node = action.options['varPath'] as number == -1 ? await emberClient.getElementByPath(selected_path) : config?.monitoredParameters![action.options['varPath'] as number].node;
 
-		if (param_node && param_node.contents.type === EmberModel.ElementType.Parameter) {
-			if (type == EmberModel.ParameterType.Integer && param_node.contents.maximum) {
-				// check integer against Min/Max Ember+ value
-				if (param_node.contents.enumeration == undefined && (value as number) > param_node.contents.maximum)
-					value = param_node.contents.maximum
-				else if (
-					param_node.contents.enumeration == undefined &&
-					(value as number) < (param_node.contents.minimum as number)
-				)
-					value = param_node.contents.minimum as number
-			}
-			if (type == EmberModel.ParameterType.Boolean) {
-				await emberClient.setValue(
-					param_node as EmberModel.NumberedTreeNode<EmberModel.Parameter>,
-					value as boolean,
-					false,
-				)
-			} else if (param_node.contents.maximum || !isNaN(Number(value))) {
-				await emberClient.setValue(
-					param_node as EmberModel.NumberedTreeNode<EmberModel.Parameter>,
-					value as number,
-					false,
-				)
-			} else if (type == EmberModel.ParameterType.String) {
-				await emberClient.setValue(
-					param_node as EmberModel.NumberedTreeNode<EmberModel.Parameter>,
-					value as string,
-					false,
-				)
-			} else {
-				self.log('warn', 'Node ' + selected_path + ' is not of type ' + type + ' (is ' + param_node.contents.type + ')')
-			}
-		} else {
-			self.log('warn', 'Parameter ' + selected_path + ' not found or not a parameter')
-		}
+      let value = action.options['value']
+
+      if (param_node && param_node.contents.type === EmberModel.ElementType.Parameter) {
+        if (param_node.contents.parameterType == EmberModel.ParameterType.Integer && param_node.contents.maximum) {
+          // check integer against Min/Max Ember+ value
+          if (param_node.contents.enumeration == undefined && (value as number) > param_node.contents.maximum)
+            value = param_node.contents.maximum
+          else if (
+            param_node.contents.enumeration == undefined &&
+            (value as number) < (param_node.contents.minimum as number)
+          )
+            value = param_node.contents.minimum as number
+
+          // check for factor
+          if (param_node.contents.factor && param_node.contents.factor != 1)
+            value = (value as number) * param_node.contents.factor
+        }
+        if (param_node.contents.parameterType == EmberModel.ParameterType.Boolean) {
+          await emberClient.setValue(
+            param_node as EmberModel.NumberedTreeNode<EmberModel.Parameter>,
+            value as boolean,
+            false,
+          )
+        } else if (param_node.contents.maximum || !isNaN(Number(value))) {
+
+          self.log('info', 'Send value:' + (value as number))
+          const result = await emberClient.setValue(
+            param_node as EmberModel.NumberedTreeNode<EmberModel.Parameter>,
+            value as number,
+            false,
+          )
+          for (const node of Object.values(result))
+            self.log('info', 'Send result value:' + Object.values(node) + " - " + Object.keys(node))
+        } else if (param_node.contents.parameterType == EmberModel.ParameterType.String) {
+          await emberClient.setValue(
+            param_node as EmberModel.NumberedTreeNode<EmberModel.Parameter>,
+            value as string,
+            false,
+          )
+        } else {
+          self.log('warn', 'Node ' + selected_path + ' is not of type ' + param_node.contents.parameterType + ' (is ' + param_node.contents.type + ')')
+        }
+      } else {
+        self.log('warn', 'Parameter ' + selected_path + ' not found or not a parameter')
+      }
+    }	
 	}
 
 const setValueExpression =
-	(self: InstanceBase<EmberPlusConfig>, emberClient: EmberClient) =>
+	(self: InstanceBase<EmberPlusConfig>, emberClient: EmberClient, config?: EmberPlusConfig) =>
 	async (action: CompanionActionEvent): Promise<void> => {
 		let selected_path = ''
-		if (action.options['use_select']) selected_path = action.options['varPath'] as string
-		else selected_path = action.options['path'] as string
+		if (action.options['varPath'] && action.options['varPath'] as number != -1)
+		  selected_path = action.options['varPath'] as string
+    else if (action.options['path'])
+		  selected_path = action.options['path'] as string
 
-		const param_node = await emberClient.getElementByPath(selected_path)
+    if (selected_path == '')
+      self.log('error', 'Selected path is undefined!')
+    else
+    {
+      const param_node = action.options['varPath'] as number == -1 ? await emberClient.getElementByPath(selected_path) : config?.monitoredParameters![action.options['varPath'] as number].node;
 
-		if (param_node && param_node.contents.type === EmberModel.ElementType.Parameter) {
-			if (param_node.contents.maximum) {
-				self.log('debug', 'Got node on ' + action.options['path'] + 'set val: ' + action.options['value'])
-				let value = await self.parseVariablesInString(action.options['value'] as string)
+      if (param_node && param_node.contents.type === EmberModel.ElementType.Parameter) {
+        if (param_node.contents.maximum) {
+          self.log('debug', 'Got node on ' + action.options['path'] + 'set val: ' + action.options['value'])
+          let value = await self.parseVariablesInString(action.options['value'] as string)
 
-				// check integer against Min/Max Ember+ value
-				if (param_node.contents.maximum != undefined && value > String(param_node.contents.maximum))
-					value = String(param_node.contents.maximum)
-				else if (param_node.contents.maximum != undefined && value < String(param_node.contents.minimum))
-					value = String(param_node.contents.minimum)
+          // check integer against Min/Max Ember+ value
+          if (param_node.contents.maximum != undefined && value > String(param_node.contents.maximum))
+            value = String(param_node.contents.maximum)
+          else if (param_node.contents.maximum != undefined && value < String(param_node.contents.minimum))
+            value = String(param_node.contents.minimum)
 
-				await emberClient.setValue(
-					param_node as EmberModel.NumberedTreeNode<EmberModel.Parameter>,
-					Number(value),
-					false,
-				)
-			} else {
-				self.log(
-					'warn',
-					'Node ' +
-						selected_path +
-						' is not of type ' +
-						EmberModel.ParameterType.Integer +
-						' or ' +
-						EmberModel.ParameterType.Enum +
-						' (is ' +
-						param_node.contents.type +
-						')',
-				)
-			}
-		} else {
-			self.log('warn', 'Parameter ' + selected_path + ' not found or not a parameter')
-		}
+          await emberClient.setValue(
+            param_node as EmberModel.NumberedTreeNode<EmberModel.Parameter>,
+            Number(value),
+            false,
+          )
+        } else {
+          self.log(
+            'warn',
+            'Node ' +
+              selected_path +
+              ' is not of type ' +
+              EmberModel.ParameterType.Integer +
+              ' or ' +
+              EmberModel.ParameterType.Enum +
+              ' (is ' +
+              param_node.contents.type +
+              ')',
+          )
+        }
+      } else {
+        self.log('warn', 'Parameter ' + selected_path + ' not found or not a parameter')
+      }
+    }
 	}
 
 const setIncrementDecrement =
-	(self: InstanceBase<EmberPlusConfig>, emberClient: EmberClient, type: string) =>
+	(self: InstanceBase<EmberPlusConfig>, emberClient: EmberClient, type: string, config?: EmberPlusConfig) =>
 	async (action: CompanionActionEvent): Promise<void> => {
 		let selected_path = ''
-		if (action.options['use_select']) selected_path = action.options['varPath'] as string
-		else selected_path = action.options['path'] as string
+		if (action.options['varPath'] && action.options['varPath'] as number != -1)
+		  selected_path = action.options['varPath'] as string
+    else if (action.options['path'])
+		  selected_path = action.options['path'] as string
 
-		const param_node = await emberClient.getElementByPath(selected_path)
+    if (selected_path == '')
+      self.log('error', 'Selected path is undefined!')
+    else
+    {
+      const param_node = action.options['varPath'] as number == -1 ? await emberClient.getElementByPath(selected_path) : config?.monitoredParameters![action.options['varPath'] as number].node;
 
-		if (param_node && param_node.contents.type === EmberModel.ElementType.Parameter) {
-			// check if integer or enum (parameter types have Content 'minimum' or 'maximum') -> value in Content 'type' is always string
-			if (param_node.contents.maximum) {
-				if (type === 'increment') {
-					// check integer against Max Ember+ value
-					if (
-						param_node.contents.maximum != undefined &&
-						Number(param_node.contents.value) + (action.options['value'] as number) > param_node.contents.maximum
-					) {
-						await emberClient.setValue(
-							param_node as EmberModel.NumberedTreeNode<EmberModel.Parameter>,
-							Number(param_node.contents.maximum),
-							false,
-						)
-					} else {
-						await emberClient.setValue(
-							param_node as EmberModel.NumberedTreeNode<EmberModel.Parameter>,
-							Number(param_node.contents.value) + (action.options['value'] as number),
-							false,
-						)
-					}
-				} else {
-					// check integer against Min Ember+ value
-					if (
-						param_node.contents.minimum != undefined &&
-						Number(param_node.contents.value) - (action.options['value'] as number) < param_node.contents.minimum
-					) {
-						await emberClient.setValue(
-							param_node as EmberModel.NumberedTreeNode<EmberModel.Parameter>,
-							Number(param_node.contents.minimum),
-							false,
-						)
-					} else {
-						await emberClient.setValue(
-							param_node as EmberModel.NumberedTreeNode<EmberModel.Parameter>,
-							Number(param_node.contents.value) - (action.options['value'] as number),
-							false,
-						)
-					}
-				}
-			} else {
-				self.log(
-					'warn',
-					'Node ' +
-						selected_path +
-						' is not of type ' +
-						EmberModel.ParameterType.Integer +
-						' or ' +
-						EmberModel.ParameterType.Enum +
-						' (is ' +
-						param_node.contents.type +
-						')',
-				)
-			}
-		} else {
-			self.log('warn', 'Parameter ' + selected_path + ' not found or not a parameter')
-		}
+      if (param_node && param_node.contents.type === EmberModel.ElementType.Parameter) {
+        // check if integer or enum (parameter types have Content 'minimum' or 'maximum') -> value in Content 'type' is always string
+        if (param_node.contents.maximum) {
+          if (type === 'increment') {
+            // check integer against Max Ember+ value
+            if (
+              param_node.contents.maximum != undefined &&
+              Number(param_node.contents.value) + (action.options['value'] as number) > param_node.contents.maximum
+            ) {
+              await emberClient.setValue(
+                param_node as EmberModel.NumberedTreeNode<EmberModel.Parameter>,
+                Number(param_node.contents.maximum),
+                false,
+              )
+            } else {
+              await emberClient.setValue(
+                param_node as EmberModel.NumberedTreeNode<EmberModel.Parameter>,
+                Number(param_node.contents.value) + (action.options['value'] as number),
+                false,
+              )
+            }
+          } else {
+            // check integer against Min Ember+ value
+            if (
+              param_node.contents.minimum != undefined &&
+              Number(param_node.contents.value) - (action.options['value'] as number) < param_node.contents.minimum
+            ) {
+              await emberClient.setValue(
+                param_node as EmberModel.NumberedTreeNode<EmberModel.Parameter>,
+                Number(param_node.contents.minimum),
+                false,
+              )
+            } else {
+              await emberClient.setValue(
+                param_node as EmberModel.NumberedTreeNode<EmberModel.Parameter>,
+                Number(param_node.contents.value) - (action.options['value'] as number),
+                false,
+              )
+            }
+          }
+        } else {
+          self.log(
+            'warn',
+            'Node ' +
+              selected_path +
+              ' is not of type ' +
+              EmberModel.ParameterType.Integer +
+              ' or ' +
+              EmberModel.ParameterType.Enum +
+              ' (is ' +
+              param_node.contents.type +
+              ')',
+          )
+        }
+      } else {
+        self.log('warn', 'Parameter ' + selected_path + ' not found or not a parameter')
+      }
+    }
 	}
 
 const setToggle =
-	(self: InstanceBase<EmberPlusConfig>, emberClient: EmberClient) =>
+	(self: InstanceBase<EmberPlusConfig>, emberClient: EmberClient, config?: EmberPlusConfig) =>
 	async (action: CompanionActionEvent): Promise<void> => {
 		let selected_path = ''
-		if (action.options['use_select']) selected_path = action.options['varPath'] as string
-		else selected_path = action.options['path'] as string
 
-		const param_node = await emberClient.getElementByPath(selected_path)
+    if (action.options['varPath'] && action.options['varPath'] as number != -1)
+		  selected_path = action.options['varPath'] as string
+    else if (action.options['path'])
+		  selected_path = action.options['path'] as string
 
-		if (param_node && param_node.contents.type === EmberModel.ElementType.Parameter) {
-			// check if boolean
-			if (param_node.contents.value === true || param_node.contents.value === false) {
-				if (param_node.contents.value === true)
-					await emberClient.setValue(param_node as EmberModel.NumberedTreeNode<EmberModel.Parameter>, false, false)
-				else await emberClient.setValue(param_node as EmberModel.NumberedTreeNode<EmberModel.Parameter>, true, false)
-			} else {
-				self.log('warn', 'Node ' + selected_path + ' is not of type Boolean')
-			}
-		} else {
-			self.log('warn', 'Parameter ' + selected_path + ' not found or not a parameter')
-		}
+    if (selected_path == '')
+      self.log('error', 'Selected path is undefined!')
+    else
+    {
+      const param_node = action.options['varPath'] as number == -1 ? await emberClient.getElementByPath(selected_path) : config?.monitoredParameters![action.options['varPath'] as number].node;
+
+      if (param_node && param_node.contents.type === EmberModel.ElementType.Parameter) {
+        // check if boolean
+        if (param_node.contents.value === true || param_node.contents.value === false) {
+          if (param_node.contents.value === true)
+            await emberClient.setValue(param_node as EmberModel.NumberedTreeNode<EmberModel.Parameter>, false, false)
+          else await emberClient.setValue(param_node as EmberModel.NumberedTreeNode<EmberModel.Parameter>, true, false)
+        } else {
+          self.log('warn', 'Node ' + selected_path + ' is not of type Boolean')
+        }
+      } else {
+        self.log('warn', 'Parameter ' + selected_path + ' not found or not a parameter')
+      }
+    }
 	}
 
 export function GetActionsList(
@@ -221,17 +259,11 @@ export function GetActionsList(
 			options: [
 				pathInput,
 				{
-					type: 'checkbox',
-					label: 'Use Selected',
-					id: 'use_select',
-					default: false,
-				},
-				{
 					type: 'dropdown',
 					label: 'Select registered path',
 					id: 'varPath',
-					choices: config.monitoredParameters?.map(({ id, label }) => <DropdownChoice>{ id: id, label: label }) ?? [],
-					default: config.monitoredParameters?.find(() => true)?.id ?? 'No paths configured!',
+					choices: [<DropdownChoice>{ id: -1, label: "none_selected_use_Path_input" }, ...(config.monitoredParameters?.flatMap(({ node, label }, index) => { if ((node as EmberModel.TreeElement<EmberModel.Parameter>).contents.parameterType === EmberModel.ParameterType.Integer) return <DropdownChoice>{ id: index, label: label }; else return []}) ?? [])],
+					default:  -1 ,
 				},
 				{
 					type: 'number',
@@ -244,24 +276,18 @@ export function GetActionsList(
 					step: 1,
 				},
 			],
-			callback: setValue(self, emberClient, EmberModel.ParameterType.Integer),
+			callback: setValue(self, emberClient, config),
 		},
 		[ActionId.SetValueReal]: {
 			name: 'Set Value Real',
 			options: [
 				pathInput,
 				{
-					type: 'checkbox',
-					label: 'Use Selected',
-					id: 'use_select',
-					default: false,
-				},
-				{
 					type: 'dropdown',
 					label: 'Select registered path',
 					id: 'varPath',
-					choices: config.monitoredParameters?.map(({ id, label }) => <DropdownChoice>{ id: id, label: label }) ?? [],
-					default: config.monitoredParameters?.find(() => true)?.id ?? 'No paths configured!',
+					choices: [<DropdownChoice>{ id: -1, label: "none_selected_use_Path_input" }, ...(config.monitoredParameters?.flatMap(({ node, label }, index) => { if ((node as EmberModel.TreeElement<EmberModel.Parameter>).contents.parameterType === EmberModel.ParameterType.Integer) <DropdownChoice>{ id: index, label: label }; else return [];}) ?? [])],
+					default: -1,
 				},
 				{
 					type: 'number',
@@ -274,24 +300,18 @@ export function GetActionsList(
 					step: 0.001, // TODO - don't want this at all preferably
 				},
 			],
-			callback: setValue(self, emberClient, EmberModel.ParameterType.Real),
+			callback: setValue(self, emberClient, config),
 		},
 		[ActionId.SetValueBoolean]: {
 			name: 'Set Value Boolean',
 			options: [
 				pathInput,
 				{
-					type: 'checkbox',
-					label: 'Use Selected',
-					id: 'use_select',
-					default: false,
-				},
-				{
 					type: 'dropdown',
 					label: 'Select registered path',
 					id: 'varPath',
-					choices: config.monitoredParameters?.map(({ id, label }) => <DropdownChoice>{ id: id, label: label }) ?? [],
-					default: config.monitoredParameters?.find(() => true)?.id ?? 'No paths configured!',
+					choices: [<DropdownChoice>{ id: -1, label: "none_selected_use_Path_input" }, ...(config.monitoredParameters?.flatMap(({ node, label }, index) => { if ((node as EmberModel.TreeElement<EmberModel.Parameter>).contents.parameterType === EmberModel.ParameterType.Boolean) return <DropdownChoice>{ id: index, label: label }; else return []}) ?? [])],
+					default: -1,
 				},
 				{
 					type: 'checkbox',
@@ -300,24 +320,18 @@ export function GetActionsList(
 					default: false,
 				},
 			],
-			callback: setValue(self, emberClient, EmberModel.ParameterType.Boolean),
+			callback: setValue(self, emberClient, config),
 		},
 		[ActionId.SetValueEnum]: {
 			name: 'Set Value ENUM (as Integer)',
 			options: [
 				pathInput,
 				{
-					type: 'checkbox',
-					label: 'Use Selected',
-					id: 'use_select',
-					default: false,
-				},
-				{
 					type: 'dropdown',
 					label: 'Select registered path',
 					id: 'varPath',
-					choices: config.monitoredParameters?.map(({ id, label }) => <DropdownChoice>{ id: id, label: label }) ?? [],
-					default: config.monitoredParameters?.find(() => true)?.id ?? 'No paths configured!',
+					choices: [<DropdownChoice>{ id: -1, label: "none_selected_use_Path_input" }, ...(config.monitoredParameters?.flatMap(({ node, label }, index) => { if ((node as EmberModel.TreeElement<EmberModel.Parameter>).contents.parameterType === EmberModel.ParameterType.Enum) return <DropdownChoice>{ id: index, label: label }; else return []}) ?? [])],
+					default: -1,
 				},
 				{
 					type: 'number',
@@ -330,24 +344,19 @@ export function GetActionsList(
 					step: 1,
 				},
 			],
-			callback: setValue(self, emberClient, EmberModel.ParameterType.Enum),
+			callback: setValue(self, emberClient, config),
+      subscribe: (action)=>{console.log("selected value changed!"); action.options.value = 10;},
 		},
 		[ActionId.SetValueString]: {
 			name: 'Set Value String',
 			options: [
 				pathInput,
 				{
-					type: 'checkbox',
-					label: 'Use Selected',
-					id: 'use_select',
-					default: false,
-				},
-				{
 					type: 'dropdown',
 					label: 'Select registered path',
 					id: 'varPath',
-					choices: config.monitoredParameters?.map(({ id, label }) => <DropdownChoice>{ id: id, label: label }) ?? [],
-					default: config.monitoredParameters?.find(() => true)?.id ?? 'No paths configured!',
+					choices: [<DropdownChoice>{ id: -1, label: "none_selected_use_Path_input" }, ...(config.monitoredParameters?.flatMap(({ node, label }, index) => { if ((node as EmberModel.TreeElement<EmberModel.Parameter>).contents.parameterType === EmberModel.ParameterType.String) return <DropdownChoice>{ id: index, label: label }; else return []}) ?? [])],
+					default: -1,
 				},
 				{
 					type: 'textinput',
@@ -355,24 +364,18 @@ export function GetActionsList(
 					id: 'value',
 				},
 			],
-			callback: setValue(self, emberClient, EmberModel.ParameterType.String),
+			callback: setValue(self, emberClient, config),
 		},
 		[ActionId.SetValueExpression]: {
 			name: 'Set Value with Expression',
 			options: [
 				pathInput,
 				{
-					type: 'checkbox',
-					label: 'Use Selected',
-					id: 'use_select',
-					default: false,
-				},
-				{
 					type: 'dropdown',
 					label: 'Select registered path',
 					id: 'varPath',
-					choices: config.monitoredParameters?.map(({ id, label }) => <DropdownChoice>{ id: id, label: label }) ?? [],
-					default: config.monitoredParameters?.find(() => true)?.id ?? 'No paths configured!',
+					choices: [<DropdownChoice>{ id: -1, label: "none_selected_use_Path_input" }, ...(config.monitoredParameters?.map(({ label }, index) => <DropdownChoice>{ id: index, label: label }) ?? [])],
+					default: -1,
 				},
 				{
 					type: 'textinput',
@@ -388,18 +391,165 @@ export function GetActionsList(
 			options: [
 				pathInput,
 				{
-					type: 'checkbox',
-					label: 'Use Selected',
-					id: 'use_select',
-					default: false,
+					type: 'dropdown',
+					label: 'Select registered path',
+					id: 'varPath',
+					choices: [<DropdownChoice>{ id: -1, label: "none_selected_use_Path_input" }, ...(config.monitoredParameters?.flatMap(({ node, label }, index) => { if ((node as EmberModel.TreeElement<EmberModel.Parameter>).contents.parameterType === EmberModel.ParameterType.Integer || (node as EmberModel.TreeElement<EmberModel.Parameter>).contents.parameterType === EmberModel.ParameterType.Enum) return <DropdownChoice>{ id: index, label: label }; else return []}) ?? [])],
+					default: -1,
 				},
+				{
+					type: 'number',
+					label: 'Value',
+					id: 'value',
+					required: true,
+					min: 0,
+					max: 0xffffffff,
+					default: 1,
+					step: 1,
+				},
+			],
+			callback: setIncrementDecrement(self, emberClient, 'increment', config),
+		},
+		[ActionId.SetDecrement]: {
+			name: 'Set Value Decrement',
+			options: [
+				pathInput,
 				{
 					type: 'dropdown',
 					label: 'Select registered path',
 					id: 'varPath',
-					choices: config.monitoredParameters?.map(({ id, label }) => <DropdownChoice>{ id: id, label: label }) ?? [],
-					default: config.monitoredParameters?.find(() => true)?.id ?? 'No paths configured!',
+					choices: [<DropdownChoice>{ id: -1, label: "none_selected_use_Path_input" }, ...(config.monitoredParameters?.flatMap(({ node, label }, index) => { if ((node as EmberModel.TreeElement<EmberModel.Parameter>).contents.parameterType === EmberModel.ParameterType.Integer || (node as EmberModel.TreeElement<EmberModel.Parameter>).contents.parameterType === EmberModel.ParameterType.Enum) return <DropdownChoice>{ id: index, label: label }; else return []}) ?? [])],
+					default: -1,
 				},
+				{
+					type: 'number',
+					label: 'Value',
+					id: 'value',
+					required: true,
+					min: 0,
+					max: 0xffffffff,
+					default: 1,
+					step: 1,
+				},
+			],
+			callback: setIncrementDecrement(self, emberClient, 'decrement', config),
+		},
+		[ActionId.ToogleBoolean]: {
+			name: 'Toggle Value Boolean',
+			options: [
+				pathInput,
+				{
+					type: 'dropdown',
+					label: 'Select registered path',
+					id: 'varPath',
+					choices: [<DropdownChoice>{ id: -1, label: "none_selected_use_Path_input" }, ...(config.monitoredParameters?.flatMap(({ node, label }, index) => { if ((node as EmberModel.TreeElement<EmberModel.Parameter>).contents.parameterType === EmberModel.ParameterType.Boolean) return <DropdownChoice>{ id: index, label: label }; else return []}) ?? [])],
+					default: -1,
+				},
+			],
+			callback: setToggle(self, emberClient, config),
+		},
+	}
+	return actions
+}
+
+export function GetActionsListNonSelection(
+	self: InstanceBase<EmberPlusConfig>,
+	emberClient: EmberClient,
+): CompanionActionDefinitions {
+	const actions: { [id in ActionId]: CompanionActionDefinition | undefined } = {
+		[ActionId.SetValueInt]: {
+			name: 'Set Value Integer',
+			options: [
+				pathInput,
+				{
+					type: 'number',
+					label: 'Value',
+					id: 'value',
+					required: true,
+					min: -0xffffffff,
+					max: 0xffffffff,
+					default: 0,
+					step: 1,
+				},
+			],
+			callback: setValue(self, emberClient),
+		},
+		[ActionId.SetValueReal]: {
+			name: 'Set Value Real',
+			options: [
+				pathInput,
+				{
+					type: 'number',
+					label: 'Value',
+					id: 'value',
+					required: true,
+					min: -0xffffffff,
+					max: 0xffffffff,
+					default: 0,
+					step: 0.001, // TODO - don't want this at all preferably
+				},
+			],
+			callback: setValue(self, emberClient),
+		},
+		[ActionId.SetValueBoolean]: {
+			name: 'Set Value Boolean',
+			options: [
+				pathInput,
+				{
+					type: 'checkbox',
+					label: 'Value',
+					id: 'value',
+					default: false,
+				},
+			],
+			callback: setValue(self, emberClient),
+		},
+		[ActionId.SetValueEnum]: {
+			name: 'Set Value ENUM (as Integer)',
+			options: [
+				pathInput,
+				{
+					type: 'number',
+					label: 'Value',
+					id: 'value',
+					required: true,
+					min: 0x00000000,
+					max: 0xffffffff,
+					default: 0,
+					step: 1,
+				},
+			],
+			callback: setValue(self, emberClient),
+		},
+		[ActionId.SetValueString]: {
+			name: 'Set Value String',
+			options: [
+				pathInput,
+				{
+					type: 'textinput',
+					label: 'Value',
+					id: 'value',
+				},
+			],
+			callback: setValue(self, emberClient),
+		},
+		[ActionId.SetValueExpression]: {
+			name: 'Set Value with Expression',
+			options: [
+				pathInput,
+				{
+					type: 'textinput',
+					label: 'Value',
+					id: 'value',
+					useVariables: true,
+				},
+			],
+			callback: setValueExpression(self, emberClient),
+		},
+		[ActionId.SetIncrement]: {
+			name: 'Set Value Increment',
+			options: [
+				pathInput,
 				{
 					type: 'number',
 					label: 'Value',
@@ -418,19 +568,6 @@ export function GetActionsList(
 			options: [
 				pathInput,
 				{
-					type: 'checkbox',
-					label: 'Use Selected',
-					id: 'use_select',
-					default: false,
-				},
-				{
-					type: 'dropdown',
-					label: 'Select registered path',
-					id: 'varPath',
-					choices: config.monitoredParameters?.map(({ id, label }) => <DropdownChoice>{ id: id, label: label }) ?? [],
-					default: config.monitoredParameters?.find(() => true)?.id ?? 'No paths configured!',
-				},
-				{
 					type: 'number',
 					label: 'Value',
 					id: 'value',
@@ -447,19 +584,6 @@ export function GetActionsList(
 			name: 'Toggle Value Boolean',
 			options: [
 				pathInput,
-				{
-					type: 'checkbox',
-					label: 'Use Selected',
-					id: 'use_select',
-					default: false,
-				},
-				{
-					type: 'dropdown',
-					label: 'Select registered path',
-					id: 'varPath',
-					choices: config.monitoredParameters?.map(({ id, label }) => <DropdownChoice>{ id: id, label: label }) ?? [],
-					default: config.monitoredParameters?.find(() => true)?.id ?? 'No paths configured!',
-				},
 			],
 			callback: setToggle(self, emberClient),
 		},

@@ -7,6 +7,7 @@ import {
 } from '@companion-module/base'
 import { EmberClient } from 'emberplus-connection'
 import { EmberPlusConfig } from './config'
+//import { EmberElement, QualifiedElement } from 'emberplus-connection/dist/model'
 
 export enum FeedbackId {
 	Parameter = 'parameter',
@@ -35,8 +36,8 @@ export function GetFeedbacksList(
 					type: 'dropdown',
 					label: 'Select registered path',
 					id: 'path',
-					choices: config.monitoredParameters?.map(({ id, label }) => <DropdownChoice>{ id: id, label: label }) ?? [],
-					default: config.monitoredParameters?.find(() => true)?.id ?? 'No paths configured!',
+					choices: config.monitoredParameters?.map(({ label }) => <DropdownChoice>{ id: label, label: label }) ?? [],
+					default: config.monitoredParameters?.find(() => true)?.label ?? 'No paths configured!',
 				},
 				{
 					type: 'number',
@@ -67,8 +68,8 @@ export function GetFeedbacksList(
 					type: 'dropdown',
 					label: 'Select registered path',
 					id: 'path',
-					choices: config.monitoredParameters?.map(({ id, label }) => <DropdownChoice>{ id: id, label: label }) ?? [],
-					default: config.monitoredParameters?.find(() => true)?.id ?? 'No paths configured!',
+					choices: config.monitoredParameters?.map(({ label }) => <DropdownChoice>{ id: label, label: label }) ?? [],
+					default: config.monitoredParameters?.find(() => true)?.label ?? 'No paths configured!',
 				},
 				{
 					type: 'checkbox',
@@ -96,8 +97,8 @@ export function GetFeedbacksList(
 					type: 'dropdown',
 					label: 'Select registered path',
 					id: 'path',
-					choices: config.monitoredParameters?.map(({ id, label }) => <DropdownChoice>{ id: id, label: label }) ?? [],
-					default: config.monitoredParameters?.find(() => true)?.id ?? 'No paths configured!',
+					choices: config.monitoredParameters?.map(({ label }) => <DropdownChoice>{ id: label, label: label }) ?? [],
+					default: config.monitoredParameters?.find(() => true)?.label ?? 'No paths configured!',
 				},
 				{
 					type: 'textinput',
@@ -123,8 +124,8 @@ export function GetFeedbacksList(
 					type: 'dropdown',
 					label: 'Select registered path',
 					id: 'path',
-					choices: config.monitoredParameters?.map(({ id, label }) => <DropdownChoice>{ id: id, label: label }) ?? [],
-					default: config.monitoredParameters?.find(() => true)?.id ?? 'No paths configured!',
+					choices: config.monitoredParameters?.map(({ label }) => <DropdownChoice>{ id: label, label: label }) ?? [],
+					default: config.monitoredParameters?.find(() => true)?.label ?? 'No paths configured!',
 				},
 				{
 					type: 'number',
@@ -156,8 +157,8 @@ export function GetFeedbacksList(
 					type: 'dropdown',
 					label: 'Select registered path',
 					id: 'path',
-					choices: config.monitoredParameters?.map(({ id, label }) => <DropdownChoice>{ id: id, label: label }) ?? [],
-					default: config.monitoredParameters?.find(() => true)?.id ?? 'No paths configured!',
+					choices: config.monitoredParameters?.map(({ label }) => <DropdownChoice>{ id: label, label: label }) ?? [],
+					default: config.monitoredParameters?.find(() => true)?.label ?? 'No paths configured!',
 				},
 				{
 					type: 'number',

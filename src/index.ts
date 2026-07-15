@@ -1,12 +1,12 @@
 import { InstanceBase, InstanceStatus, SomeCompanionConfigField, runEntrypoint } from '@companion-module/base'
-import { GetActionsList } from './actions'
+import { GetActionsList, GetActionsListNonSelection } from './actions'
 import { EmberPlusConfig, GetConfigFields, parsingPath } from './config'
 import { FeedbackId, GetFeedbacksList } from './feedback'
-import { EmberPlusState } from './state'
-import { EmberClient } from 'emberplus-connection' // note - emberplus-conn is in parent repo, not sure if it needs to be defined as dependency
+import { EmberClient, Model as EmberModel } from 'emberplus-connection' // note - emberplus-conn is in parent repo, not sure if it needs to be defined as dependency
 import { ElementType, TreeElement, EmberElement, EmberNode, QualifiedElement } from 'emberplus-connection/dist/model'
 import { GetVariablesList } from './variables'
 import { RootElement } from 'emberplus-connection/dist/types'
+//import { debounce } from 'es-toolkit'
 
 /**
  * Companion instance class for generic EmBER+ Devices
@@ -14,13 +14,6 @@ import { RootElement } from 'emberplus-connection/dist/types'
 class EmberPlusInstance extends InstanceBase<EmberPlusConfig> {
 	private emberClient!: EmberClient
 	private config!: EmberPlusConfig
-	private state!: EmberPlusState
-
-	// Override base types to make types stricter
-	public checkFeedbacks(...feedbackTypes: string[]): void {
-		// todo - arg should be of type FeedbackId
-		super.checkFeedbacks(...feedbackTypes)
-	}
 
 	/**
 	 * Main initialization function called once the module
@@ -28,7 +21,6 @@ class EmberPlusInstance extends InstanceBase<EmberPlusConfig> {
 	 */
 	public async init(config: EmberPlusConfig): Promise<void> {
 		this.config = config
-		this.state = new EmberPlusState()
 
 		this.setupParseFilters()
 		this.setupMonitoredParams()
@@ -65,7 +57,7 @@ class EmberPlusInstance extends InstanceBase<EmberPlusConfig> {
 	}
 
 	private updateCompanionBits(): void {
-		this.setActionDefinitions(GetActionsList(this, this.client, this.config))
+		this.setActionDefinitions(this.config.monitoredParameters && this.config.monitoredParameters.length > 1 ? GetActionsList(this, this.client, this.config) : GetActionsListNonSelection(this, this.client))
 		this.setFeedbackDefinitions(GetFeedbacksList(this, this.client, this.config))
 		this.setVariableDefinitions(GetVariablesList(this.config))
 	}
@@ -97,6 +89,7 @@ class EmberPlusInstance extends InstanceBase<EmberPlusConfig> {
 					}
 					await this.registerParameters()
 					this.updateCompanionBits()
+          await this.getMonitoredParamValues()
 
 					this.updateStatus(InstanceStatus.Ok)
 				})
@@ -116,11 +109,14 @@ class EmberPlusInstance extends InstanceBase<EmberPlusConfig> {
 	}
 
 	private setupMonitoredParams(): void {
-		this.config.monitoredParameters = []
+		this.config.monitoredParameters = [{node: new EmberModel.QualifiedElementImpl("0", new EmberModel.ParameterImpl(EmberModel.ParameterType.Null)) , label: "none_selected_use_Path_input"}]
 		this.config.parseParameterPaths = []
 		if (this.config.monitoredParametersString) {
 			const params = this.config.monitoredParametersString.split(',')
-			params.map((item) => this.config.parseParameterPaths?.push({ id: item, label: item }))
+			params.map((item) => {
+        const path = item.split('/').join('.')
+        this.config.parseParameterPaths?.push({ id: path, label: path })
+      })
 		}
 	}
 
@@ -136,19 +132,23 @@ class EmberPlusInstance extends InstanceBase<EmberPlusConfig> {
 		if (this.config.parseParamFilterString) this.config.parseParamFilter = this.config.parseParamFilterString.split(',')
 	}
 
+  private async getMonitoredParamValues() {
+    this.config.monitoredParameters?.forEach( async ({node, label}) => {
+      await this.handleChangedValue(label, node);
+    });
+  }
+
 	private async registerParameters() {
 		this.config.monitoredParameters ??= []
 		this.log('info', 'Start parameter path registration')
 		for (const param of this.config.parseParameterPaths ?? []) {
 			try {
-				const initial_node = await this.emberClient.getElementByPath(param.id, (node) => {
+				const param_node = await this.emberClient.getElementByPath(param.id, (node) => {
 					this.handleChangedValue(param.label, node).catch((e) => this.log('error', 'Error handling parameter ' + e))
 				})
-				if (initial_node) {
-					// add to variables
-					this.config.monitoredParameters.push(param)
-					this.setVariableDefinitions(GetVariablesList(this.config))
-					await this.handleChangedValue(param.label, initial_node)
+				if (param_node) {
+					this.config.monitoredParameters.push({node: param_node, label: param.label.replace('#','')})
+		      this.log('info', 'Add Variable for : ' + param.label)
 				}
 			} catch (e) {
 				this.log('error', 'Failed to subscribe to path "' + param.id + '": ' + e)
@@ -157,22 +157,32 @@ class EmberPlusInstance extends InstanceBase<EmberPlusConfig> {
 		this.log('info', 'Finished ...')
 	}
 
-	private async handleChangedValue(path: string, node: TreeElement<EmberElement>) {
-		if (node.contents.type == ElementType.Parameter) {
-			// check if enumeration value
-			if (node.contents.enumeration !== undefined) {
-				const curr_value = node.contents.value!
-				const enumValues = node.contents.enumeration.split('\n')
-				this.state.parameters.set(path, enumValues.at(curr_value as number) ?? '')
-			} else {
-				// check if integer value has factor to be applied
-				if (node.contents.factor !== undefined) {
-					const curr_value = (node.contents.value! as number) / node.contents.factor
-					this.state.parameters.set(path, curr_value.toString() ?? '')
-				} else this.state.parameters.set(path, node.contents.value?.toString() ?? '')
-			}
-			for (const feedback in FeedbackId) this.checkFeedbacks(feedback)
-			this.setVariableValues({ [path]: this.state.parameters.get(path) })
+	private async handleChangedValue(path: string, node: TreeElement<EmberElement> | undefined) {
+		if (node?.contents?.type == ElementType.Parameter) {
+
+      let value: boolean | number | string;
+      if (node.contents.parameterType == EmberModel.ParameterType.Boolean)
+        value = node.contents.value as boolean
+      else if (node.contents.parameterType == EmberModel.ParameterType.Integer)
+      {
+        if (node.contents.factor !== undefined)
+					value = (node.contents.value! as number) / node.contents.factor
+        else
+			    value = node.contents.value as number
+      }
+      else if (node.contents.parameterType == EmberModel.ParameterType.Enum)
+			  value = node.contents.enumeration?.split('\n')[parseInt(node.contents.value as string)] as string
+      else
+        value = node.contents.value as string
+
+      this.setVariableValues({ [path]: value });
+
+      // check feedbacks
+      this.checkFeedbacks(FeedbackId.Parameter);
+      this.checkFeedbacks(FeedbackId.enumEqual);
+      this.checkFeedbacks(FeedbackId.boolEqual);
+      this.checkFeedbacks(FeedbackId.hitThreshold);
+      this.checkFeedbacks(FeedbackId.belowThreshold);
 		}
 	}
 
@@ -252,16 +262,14 @@ class EmberPlusInstance extends InstanceBase<EmberPlusConfig> {
 	}
 
 	private async _addMonitoredParameter(node: QualifiedElement<EmberElement>, label: string) {
-		this.config.monitoredParameters!.push({ id: node.path, label: label })
+    console.log(node.path);
 
-		this.setVariableDefinitions(GetVariablesList(this.config))
-
-		const initial_node = await this.emberClient.getElementByPath(node.path, (node) => {
+		const param_node = await this.emberClient.getElementByPath(node.path, (node) => {
 			this.handleChangedValue(label, node).catch((e) => this.log('error', 'Error handling parameter ' + e))
 		})
-		if (initial_node) {
+		if (param_node) {
+		  this.config.monitoredParameters!.push({ node: param_node, label: label})
 			//this.log('debug', 'Registered for path "' + label + '"')
-			await this.handleChangedValue(label, initial_node)
 		}
 	}
 }

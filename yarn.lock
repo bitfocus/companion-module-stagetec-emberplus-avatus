@@ -1094,9 +1094,9 @@ asn1@evs-broadcast/node-asn1:
   languageName: node
   linkType: hard
 
-"emberplus-connection@npm:^0.2.1":
-  version: 0.2.2
-  resolution: "emberplus-connection@npm:0.2.2"
+"emberplus-connection@npm:0.3.1":
+  version: 0.3.1
+  resolution: "emberplus-connection@npm:0.3.1"
   dependencies:
     asn1: evs-broadcast/node-asn1
     debug: "npm:^4.3.4"
@@ -1104,7 +1104,21 @@ asn1@evs-broadcast/node-asn1:
     long: "npm:^3.2.0"
     smart-buffer: "npm:^3.0.3"
     tslib: "npm:^2.6.2"
-  checksum: 10c0/e7674b2990733800f3838f8ec4d9679b26336bc6c2e83b78dce2c10e9552c26f8fc3f08fbaa0ce8f089812c26ef7d4c3057b20cb90527a5e34e53cc6b4203430
+  checksum: 10c0/11f0b17b4f1e626ab644f9f85393827d4c40b0f389ea6b5742b15bd8767260b883a77b0e021767f57180989defb376ce42bff150d748f73b3cab9da4d3d7148d
+  languageName: node
+  linkType: hard
+
+"emberplus-connection@patch:emberplus-connection@npm%3A0.3.1#~/.yarn/patches/emberplus-connection-npm-0.3.1-a2439212e6.patch":
+  version: 0.3.1
+  resolution: "emberplus-connection@patch:emberplus-connection@npm%3A0.3.1#~/.yarn/patches/emberplus-connection-npm-0.3.1-a2439212e6.patch::version=0.3.1&hash=1a2bcc"
+  dependencies:
+    asn1: evs-broadcast/node-asn1
+    debug: "npm:^4.3.4"
+    eventemitter3: "npm:^4.0.7"
+    long: "npm:^3.2.0"
+    smart-buffer: "npm:^3.0.3"
+    tslib: "npm:^2.6.2"
+  checksum: 10c0/f65b7f8b936628d831c588a9487630a6a39ea3ee1eea7539b1c0826e9e232cd25ec8e166596325a482c7bc7f1dc01b0fbfccd71bd9ff1368d4aeefae39da2ba0
   languageName: node
   linkType: hard
 
@@ -2717,7 +2731,7 @@ asn1@evs-broadcast/node-asn1:
     "@companion-module/base": "npm:~1.11.3"
     "@companion-module/tools": "npm:^2.6.1"
     "@types/node": "npm:^22.13"
-    emberplus-connection: "npm:^0.2.1"
+    emberplus-connection: "patch:emberplus-connection@npm%3A0.3.1#~/.yarn/patches/emberplus-connection-npm-0.3.1-a2439212e6.patch"
     eslint: "npm:^9.23.0"
     husky: "npm:^9.1.7"
     lint-staged: "npm:^15.5.0"

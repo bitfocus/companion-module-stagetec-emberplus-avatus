@@ -1,6 +1,6 @@
 {
 	"name": "stagetec-emberplus-avatus",
-	"version": "1.0.3",
+	"version": "1.0.4",
 	"main": "dist/index.js",
 	"scripts": {
 		"prepare": "husky",
@@ -28,7 +28,7 @@
 	},
 	"dependencies": {
 		"@companion-module/base": "~1.11.3",
-		"emberplus-connection": "^0.2.1"
+		"emberplus-connection": "patch:emberplus-connection@npm%3A0.3.1#~/.yarn/patches/emberplus-connection-npm-0.3.1-a2439212e6.patch"
 	},
 	"devDependencies": {
 		"@companion-module/tools": "^2.6.1",

@@ -1,0 +1,50 @@
+diff --git a/dist/Ember/Client/index.js b/dist/Ember/Client/index.js
+index afa0c08d794c1f9f86ae6a79ccae24f8731318dc..dde73dacedb340430c49f8ec778c06a1144012ea 100644
+--- a/dist/Ember/Client/index.js
++++ b/dist/Ember/Client/index.js
+@@ -11,6 +11,7 @@ const util_1 = require("../Lib/util");
+ const ber_1 = require("../../encodings/ber");
+ const Tree_1 = require("../../model/Tree");
+ const StreamManager_1 = require("./StreamManager");
++const model_1 = require("../../model");
+ var ExpectResponse;
+ (function (ExpectResponse) {
+     ExpectResponse["None"] = "none";
+@@ -208,11 +209,17 @@ class EmberClient extends eventemitter3_1.EventEmitter {
+         if (!node) {
+             throw new Error('No node specified');
+         }
+-        const qualifiedParam = (0, util_1.assertQualifiedEmberNode)(node);
++        const qualifiedNode = (0, util_1.assertQualifiedEmberNode)(node);
++        const qualifiedParam = new Tree_1.QualifiedElementImpl(node.path, new model_1.ParameterImpl());
+         // TODO - validate value
+-        // TODO - should other properties be scrapped
+-        qualifiedParam.contents.value = value;
+-        return this._sendRequest(qualifiedParam, awaitResponse ? ExpectResponse.Any : ExpectResponse.None);
++        if (qualifiedNode.contents.type == EmberElement_1.ElementType.Parameter) {
++            qualifiedParam.contents.value = value;
++            return this._sendRequest(qualifiedParam, awaitResponse ? ExpectResponse.Any : ExpectResponse.None);
++        }
++        
++        qualifiedNode.contents.value = value;
++
++        return this._sendRequest(qualifiedNode, awaitResponse ? ExpectResponse.Any : ExpectResponse.None);
+     }
+     async matrixConnect(matrix, target, sources) {
+         return this._matrixMutation(matrix, target, sources, Connection_1.ConnectionOperation.Connect);
+@@ -290,11 +297,11 @@ class EmberClient extends eventemitter3_1.EventEmitter {
+             if (tree?.number !== undefined)
+                 numberedPath.push(tree.number);
+         }
+-        if (tree?.contents.type === EmberElement_1.ElementType.Parameter) {
++        //if (tree?.contents.type === EmberElement_1.ElementType.Parameter) {
+             // do an additional getDirectory because Providers do not _have_ to send updates without that (should vs shall)
+-            const req = await this.getDirectory(tree);
+-            await req.response;
+-        }
++        //    const req = await this.getDirectory(tree);
++        //    await req.response;
++        //}
+         if (cb && numberedPath) {
+             this._subscriptions.push({
+                 path: numberedPath.join('.'),

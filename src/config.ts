@@ -1,10 +1,10 @@
 import { Regex, SomeCompanionConfigField } from '@companion-module/base'
-import { Model as EmberModel } from 'emberplus-connection' 
+import { Model as EmberModel } from 'emberplus-connection'
 
 export const portDefault = 9000
 
-export type monitoredParameters = { node: EmberModel.TreeElement<EmberModel.EmberElement>; label: string; }
-export type paramPaths = { id: string; label: string ;}
+export type monitoredParameters = { node: EmberModel.TreeElement<EmberModel.EmberElement>; label: string }
+export type paramPaths = { id: string; label: string }
 export type parsingPath = { path: string; elements: string[] }
 
 export interface EmberPlusConfig {

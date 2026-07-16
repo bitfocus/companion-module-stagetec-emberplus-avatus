@@ -11,7 +11,6 @@ Credits to the developers of the generic Ember+ module for the basis (https://gi
  * Auto parsing of Ember+ tree available
  * Additional actions available: increment, decrement, toggle boolean and set value with expression
  * Additional feedbacks available: hit threshold, below threshold and boolean equal
-  
 
 ## Version History
 
@@ -32,3 +31,7 @@ Credits to the developers of the generic Ember+ module for the basis (https://gi
 
 ### 1.0.3
  * dependency cleanup
+
+### 1.0.4
+ * bugfix for ember+ message structure to avoid ignored value changes for mute values
+ * performance improvements for actions with stored node elements

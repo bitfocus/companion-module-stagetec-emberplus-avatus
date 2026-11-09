@@ -23,15 +23,15 @@
 		]
 	},
 	"engines": {
-		"node": "^22.14",
+		"node": "^22.14 || ^26.5",
 		"yarn": "^4"
 	},
 	"dependencies": {
-		"@companion-module/base": "~1.11.3",
+		"@companion-module/base": "~1.15.1",
 		"emberplus-connection": "patch:emberplus-connection@npm%3A0.3.1#~/.yarn/patches/emberplus-connection-npm-0.3.1-a2439212e6.patch"
 	},
 	"devDependencies": {
-		"@companion-module/tools": "^2.8.0",
+		"@companion-module/tools": "^2.9.1",
 		"@types/node": "^22.13",
 		"eslint": "^9.23.0",
 		"husky": "^9.1.7",

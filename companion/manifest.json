@@ -3,7 +3,7 @@
   "name": "stagetec-emberplus-avatus",
   "shortname": "Ember+ Avatus",
   "description": "StageTec Official Ember+ module specific to Avatus for Companion",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "license": "MIT",
   "repository": "git+https://github.com/bitfocus/companion-module-stagetec-emberplus-avatus",
   "bugs": "https://github.com/bitfocus/companion-module-stagetec-emberplus-avatus/issues",
@@ -15,7 +15,7 @@
   ],
   "legacyIds": [],
   "runtime": {
-    "type": "node18",
+    "type": "node26",
     "api": "nodejs-ipc",
     "apiVersion": "0.0.0",
     "entrypoint": "../dist/index.js"
